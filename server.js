@@ -81,6 +81,7 @@ carritosRouter.get("/", async (req, res) => {
 });
 carritosRouter.get("/:id", async (req, res) => {
   let cart = await carritosApi.getById(req.params.id);
+  console.log(cart);
   res.json(cart);
 });
 carritosRouter.post("/", async (req, res) => {
@@ -91,28 +92,26 @@ carritosRouter.post("/", async (req, res) => {
 carritosRouter.delete("/:id", async (req, res) => {
   let id = req.params.id;
   try {
-    let deleted = await carritosApi.deleteById(id);
-    res.json({ deleted_product: deleted });
+    let cartDeleted = await carritosApi.getById(id);
+    console.log(prodToDelete);
+    await carritosApi.deleteById(id);
+    res.json({ cart_deleted: cartDeleted[0] });
   } catch (error) {
     res.status(400).send(`${error}`);
   }
 });
 carritosRouter.get("/:id/productos", async (req, res) => {
   let cart = await carritosApi.getById(req.params.id);
-  cart
-    ? res.json({ products: cart.products })
-    : res.status(404).send("ID not found");
+  cart ? res.json({ products: cart }) : res.status(404).send("ID not found");
 });
 carritosRouter.post("/:id/productos", async (req, res) => {
-  let cart = await carritosApi.getById(req.params.id);
-  // Para agregar un producto al carrito
-  // en el body debera enviarse un objeto solo con la propiedad "id"
-  // Ej {"id" : 2}
   let body = req.body;
   let product = await productosApi.getById(body.id);
+  let cart = await carritosApi.getById(req.params.id);
+
   if (cart && product) {
-    let cart = cart.products.push(product);
-    await carritosApi.updateCart(cart);
+    cart[0].products.push(product[0]);
+    await carritosApi.updateCart(req.params.id, cart[0].products);
     res.json({
       new_product: product,
       on_cart: cart,
@@ -123,10 +122,15 @@ carritosRouter.post("/:id/productos", async (req, res) => {
 });
 carritosRouter.delete("/:id/productos/:id_prod", async (req, res) => {
   let cart = await carritosApi.getById(req.params.id);
+  cart = cart[0];
   let product = await productosApi.getById(req.params.id_prod);
+  product = product[0];
+
   cart
     ? product
-      ? cart.products.some((element) => element.id === product.id)
+      ? cart.products.find(
+          (element) => element._id.toString() === product._id.toString()
+        )
         ? (await carritosApi.deleteCartProduct(cart, product),
           res.json({ deleted_product: product }))
         : res.status(404).send("Product is not in cart")

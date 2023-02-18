@@ -10,10 +10,12 @@ class MongoCarts extends MongoContainer {
     let response = await this.collection.create(cart);
     return response;
   }
-  async updateCart(cart) {
+  async updateCart(id, product_list) {
+    console.log(id);
+    console.log(product_list);
     let response = await this.collection.updateOne(
-      { _id: cart.id },
-      { cart: cart }
+      { _id: id },
+      { products: product_list }
     );
     return response;
   }
@@ -26,9 +28,10 @@ class MongoCarts extends MongoContainer {
     return response;
   }
   async deleteCartProduct(cart, product) {
-    let index = cart.products.map((e) => e.id).indexOf(product.id);
-    cart.products.splice(index, 1);
-    let response = await this.updateCart(cart);
+    cart.products = cart.products.filter(
+      (e) => e._id.toString() !== product._id.toString()
+    );
+    let response = await this.updateCart(cart._id, cart.products);
     return response;
   }
 }
