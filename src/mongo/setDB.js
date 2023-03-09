@@ -16,5 +16,4 @@ const connection = await mongoose.connect(
     }
   }
 );
-
 export default connection;
